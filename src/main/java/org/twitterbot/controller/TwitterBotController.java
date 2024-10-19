@@ -6,6 +6,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.twitterbot.service.TwitterBotService;
 
+/**
+ * TwitterBotController is a REST controller that triggers a Twitter bot
+ * to search for tweets containing a specified keyword and reply with a GIF.
+ *
+ * This controller implements CommandLineRunner to support triggering the bot
+ * from the command line.
+ */
 @RestController
 public class TwitterBotController implements CommandLineRunner {
     private final TwitterBotService twitterBotService;

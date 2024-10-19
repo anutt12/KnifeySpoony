@@ -6,6 +6,12 @@ import twitter4j.*;
 
 import java.io.File;
 
+/**
+ * TwitterBotService is responsible for searching tweets containing a
+ * specific keyword and replying to them with a GIF.
+ * <p>
+ * This class interacts with the Twitter API to perform search and reply operations.
+ */
 @Service
 public class TwitterBotService {
 
@@ -42,17 +48,17 @@ public class TwitterBotService {
         }
     }
 
-    private Query createQuery(String keyword, int count) {
+    Query createQuery(String keyword, int count) {
         Query query = new Query(keyword);
         query.setCount(count);
         return query;
     }
 
-    private boolean shouldReplyToStatus(Status status) {
+    boolean shouldReplyToStatus(Status status) {
         return !status.isRetweet() && !status.getUser().isProtected();
     }
 
-    private void replyWithGif(Status status, String mediaId) throws TwitterException {
+    void replyWithGif(Status status, String mediaId) throws TwitterException {
         String replyText = "@" + status.getUser().getScreenName();
         StatusUpdate statusUpdate = new StatusUpdate(replyText);
         statusUpdate.inReplyToStatusId(status.getId());
@@ -61,7 +67,7 @@ public class TwitterBotService {
     }
 
     // Method to upload the GIF to Twitter and get the media ID
-    private String uploadGif(String filePath) {
+    String uploadGif(String filePath) {
         try {
             // Upload the GIF file
             File gifFile = new File(filePath);

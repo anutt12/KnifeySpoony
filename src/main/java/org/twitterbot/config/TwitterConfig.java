@@ -9,6 +9,22 @@ import twitter4j.conf.ConfigurationBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 
+/**
+ * TwitterConfig is a configuration class for setting up a Twitter instance using the Twitter4J library.
+ * It uses Spring's @Configuration to allow context-based injection of Twitter configuration properties.
+ *
+ * Logging is enabled for this configuration through Lombok's @Slf4j annotation.
+ * The Twitter instance is configured by reading OAuth properties from the application's configuration.
+ *
+ * Properties:
+ * - twitter4j.oauth.consumerKey: Consumer Key for Twitter OAuth.
+ * - twitter4j.oauth.consumerSecret: Consumer Secret for Twitter OAuth.
+ * - twitter4j.oauth.accessToken: Access Token for Twitter OAuth.
+ * - twitter4j.oauth.accessTokenSecret: Access Token Secret for Twitter OAuth.
+ *
+ * Methods:
+ * - twitter(): Creates and returns a Twitter instance configured with the provided OAuth properties.
+ */
 @Slf4j
 @Configuration
 public class TwitterConfig {
@@ -38,7 +54,7 @@ public class TwitterConfig {
         return twitterFactory.getInstance();
     }
 
-    private ConfigurationBuilder buildTwitterConfiguration() {
+    ConfigurationBuilder buildTwitterConfiguration() {
         return new ConfigurationBuilder()
                 .setDebugEnabled(true)
                 .setOAuthConsumerKey(consumerKey)
