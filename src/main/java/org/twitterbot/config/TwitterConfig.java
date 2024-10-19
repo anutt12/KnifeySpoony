@@ -1,4 +1,4 @@
-package org.twitterbot.Config;
+package org.twitterbot.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
