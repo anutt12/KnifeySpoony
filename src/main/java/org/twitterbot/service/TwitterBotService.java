@@ -1,5 +1,6 @@
 package org.twitterbot.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import twitter4j.*;
 
@@ -9,43 +10,54 @@ import java.io.File;
 public class TwitterBotService {
 
 
+    @Value("${gif.path}")  // Inject the GIF path from application.properties
+    private String gifPath;
+
     private final Twitter twitter;
 
     public TwitterBotService(Twitter twitter) {
         this.twitter = twitter;
     }
 
-    public void searchAndReply(String keyword) {
-        keyword = "knife";
-        try {
-            Query query = new Query(keyword);
-            query.setCount(10);  // Limit the number of tweets returned
 
+    public void searchAndReplyWithGif(String keyword) {
+        final int TWEET_COUNT = 10;
+
+        try {
+            Query query = createQuery(keyword, TWEET_COUNT);
             QueryResult result = twitter.search(query);
 
             for (Status status : result.getTweets()) {
-                String user = status.getUser().getScreenName();
-                String replyText = "@" + user;
-
-                // Avoid replying to retweets and protected tweets
-                if (!status.isRetweet() && !status.getUser().isProtected()) {
-                    // Upload the GIF and get the media ID
-                    String mediaId = uploadGif("src/main/resources/giphy.webp");
+                if (shouldReplyToStatus(status)) {
+                    String mediaId = uploadGif(gifPath);  // Use the path from properties
 
                     if (mediaId != null) {
-                        // Create a status update with the reply text and the media ID
-                        StatusUpdate statusUpdate = new StatusUpdate(replyText);
-                        statusUpdate.inReplyToStatusId(status.getId());
-                        statusUpdate.setMediaIds(Long.parseLong(mediaId)); // Attach the media (GIF)
-
-                        twitter.updateStatus(statusUpdate);
-                        System.out.println("Replied to @" + user + " with a GIF");
+                        replyWithGif(status, mediaId);
+                        System.out.println("Replied to @" + status.getUser().getScreenName() + " with a GIF");
                     }
                 }
             }
         } catch (TwitterException e) {
             e.printStackTrace();
         }
+    }
+
+    private Query createQuery(String keyword, int count) {
+        Query query = new Query(keyword);
+        query.setCount(count);
+        return query;
+    }
+
+    private boolean shouldReplyToStatus(Status status) {
+        return !status.isRetweet() && !status.getUser().isProtected();
+    }
+
+    private void replyWithGif(Status status, String mediaId) throws TwitterException {
+        String replyText = "@" + status.getUser().getScreenName();
+        StatusUpdate statusUpdate = new StatusUpdate(replyText);
+        statusUpdate.inReplyToStatusId(status.getId());
+        statusUpdate.setMediaIds(Long.parseLong(mediaId));
+        twitter.updateStatus(statusUpdate);
     }
 
     // Method to upload the GIF to Twitter and get the media ID

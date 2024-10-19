@@ -1,34 +1,38 @@
 package org.twitterbot.controller;
 
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.twitterbot.service.TwitterBotService;
 
 @RestController
 public class TwitterBotController implements CommandLineRunner {
-
     private final TwitterBotService twitterBotService;
+
+    private static final String TRIGGERED_MESSAGE = "Bot triggered for keyword: ";
+    private static final String NO_KEYWORD_MESSAGE = "No keyword provided";
 
     public TwitterBotController(TwitterBotService twitterBotService) {
         this.twitterBotService = twitterBotService;
     }
 
-    // Define a GET endpoint to trigger the searchAndReply method
-    @GetMapping("/trigger-bot")
-    public String triggerBot(@RequestParam String keyword) {
-        twitterBotService.searchAndReply(keyword);
-        return "Bot triggered for keyword: " + keyword;
+    @RequestMapping("/trigger-search-and-reply")
+    public String triggerSearchAndReplyWithGif(@RequestParam String keyword) {
+        twitterBotService.searchAndReplyWithGif(keyword);
+        return TRIGGERED_MESSAGE + keyword;
     }
 
     @Override
     public void run(String... args) throws Exception {
         if (args.length > 0) {
-            // Trigger the bot with the first argument as the keyword
-            twitterBotService.searchAndReply(args[0]);
+            triggerBotWithKeyword(args[0]);
         } else {
-            System.out.println("No keyword provided");
+            System.out.println(NO_KEYWORD_MESSAGE);
         }
+    }
+
+    private void triggerBotWithKeyword(String keyword) {
+        twitterBotService.searchAndReplyWithGif(keyword);
     }
 }
