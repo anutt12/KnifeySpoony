@@ -40,7 +40,7 @@ class TwitterConfigTest {
         when(twitterFactory.getInstance()).thenReturn(mockTwitter);
 
         // Call the method under test
-        Twitter twitterInstance = twitterConfig.twitter();
+        Twitter twitterInstance = twitterConfig.twitter(twitterFactory);
 
         // Verify that the Twitter instance is created
         assertNotNull(twitterInstance);

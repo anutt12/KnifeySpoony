@@ -47,11 +47,15 @@ public class TwitterConfig {
     private String accessTokenSecret;
 
     @Bean
-    public Twitter twitter() {
+    public Twitter twitter(TwitterFactory twitterFactory) {
         log.info("Creating Twitter instance with provided configuration properties.");
-        ConfigurationBuilder configurationBuilder = buildTwitterConfiguration();
-        TwitterFactory twitterFactory = new TwitterFactory(configurationBuilder.build());
         return twitterFactory.getInstance();
+    }
+
+    @Bean
+    public TwitterFactory twitterFactory() {
+        ConfigurationBuilder configurationBuilder = buildTwitterConfiguration();
+        return new TwitterFactory(configurationBuilder.build());
     }
 
     ConfigurationBuilder buildTwitterConfiguration() {

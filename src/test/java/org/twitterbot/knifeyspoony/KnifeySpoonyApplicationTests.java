@@ -9,5 +9,4 @@ class KnifeySpoonyApplicationTests {
     @Test
     void contextLoads() {
     }
-
 }
