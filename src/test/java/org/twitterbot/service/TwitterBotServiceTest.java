@@ -3,6 +3,7 @@ package org.twitterbot.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -12,6 +13,7 @@ import twitter4j.*;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,66 +24,84 @@ import static org.mockito.Mockito.*;
 class TwitterBotServiceTest {
 
     @InjectMocks
-    private TwitterBotService twitterBotService;  // Class under test
+    private TwitterBotService twitterBotService; // Class under test
 
     @Mock
-    private Twitter twitter;  // Mocked Twitter dependency
+    private Twitter twitter; // Mocked Twitter dependency
 
-    private final String gifPath = "/path/to/mock/gif.gif";
+    private static final String GIF_PATH = "/path/to/mock/gif.gif";
+    private static final String MOCK_USER_SCREEN_NAME = "mockUser";
+    private static final long MOCK_MEDIA_ID = 123456L;
 
     @BeforeEach
     public void setUp() {
-        // Inject the mock GIF path into the service
-        ReflectionTestUtils.setField(twitterBotService, "gifPath", gifPath);
+        ReflectionTestUtils.setField(twitterBotService, "gifPath", GIF_PATH);
     }
 
     @Test
     void testSearchAndReplyWithGif_Success() throws TwitterException {
-        // Mock a Twitter QueryResult and Status objects
-        QueryResult mockResult = mock(QueryResult.class);
+        // Mock dependencies and their behavior
+        setupMockTwitterBehaviorForSearchAndReplyWithGif();
+
+        // Mock the response of the updateStatus method to return a valid Status object
+        Status mockStatus = mock(Status.class);
+        when(twitter.updateStatus(any(StatusUpdate.class))).thenReturn(mockStatus);
+
+        // Call the method under test
+        twitterBotService.searchAndReplyWithGif("knife");
+
+        // Verify interactions with Twitter
+        verify(twitter, times(1)).search(any(Query.class));
+        verify(twitter, times(1)).uploadMedia(any(File.class));
+
+        // Capture the StatusUpdate object passed to updateStatus
+        ArgumentCaptor<StatusUpdate> statusUpdateCaptor = ArgumentCaptor.forClass(StatusUpdate.class);
+        verify(twitter, times(1)).updateStatus(statusUpdateCaptor.capture());
+
+        StatusUpdate capturedStatusUpdate = statusUpdateCaptor.getValue();
+
+        // Assert the captured StatusUpdate
+        assertNotNull(capturedStatusUpdate);
+        assertTrue(capturedStatusUpdate.getStatus().contains("knife"));
+
+        // Verifying that media ID is set correctly using reflection
+        long[] mediaIds = (long[]) ReflectionTestUtils.getField(capturedStatusUpdate, "mediaIds");
+        assertNotNull(mediaIds);
+        assertEquals(1, mediaIds.length);
+        assertEquals(MOCK_MEDIA_ID, mediaIds[0]);
+    }
+
+    private void setupMockTwitterBehaviorForSearchAndReplyWithGif() throws TwitterException {
+        // Mock QueryResult and its behavior
+        QueryResult mockQueryResult = mock(QueryResult.class);
         Status mockStatus = mock(Status.class);
         User mockUser = mock(User.class);
 
-        // Set up mock status and user behavior
-        when(mockUser.getScreenName()).thenReturn("mockUser");
+        // Mock user and status behaviors
+        when(mockUser.getScreenName()).thenReturn(MOCK_USER_SCREEN_NAME);
         when(mockStatus.getUser()).thenReturn(mockUser);
         when(mockStatus.isRetweet()).thenReturn(false);
         when(mockUser.isProtected()).thenReturn(false);
 
-        // Mock the search result
-        List<Status> tweets = new ArrayList<>();
-        tweets.add(mockStatus);
-        when(mockResult.getTweets()).thenReturn(tweets);
-        when(twitter.search(any(Query.class))).thenReturn(mockResult);
+        // Mock the list of statuses returned by the query
+        List<Status> tweets = Collections.singletonList(mockStatus);
+        when(mockQueryResult.getTweets()).thenReturn(tweets);
+        when(twitter.search(any(Query.class))).thenReturn(mockQueryResult);
 
-        // Mock the upload GIF behavior
-        UploadedMedia mockUploadedMedia = mock(UploadedMedia.class);  // Mock UploadedMedia
-        when(mockUploadedMedia.getMediaId()).thenReturn(123456L);     // Simulate the media ID
-        when(twitter.uploadMedia(any(File.class))).thenReturn(mockUploadedMedia); // Return the mock
-
-        // Mock the update status behavior
-        doNothing().when(twitter).updateStatus(any(StatusUpdate.class));
-
-        // Call the method under test
-        twitterBotService.searchAndReplyWithGif("knife");
-
-        // Verify that the methods were called correctly
-        verify(twitter, times(1)).search(any(Query.class));
-        verify(twitter, times(1)).uploadMedia(any(File.class));
-        verify(twitter, times(1)).updateStatus(any(StatusUpdate.class));
+        // Mock uploadMedia behavior
+        UploadedMedia mockUploadedMedia = mock(UploadedMedia.class);
+        when(mockUploadedMedia.getMediaId()).thenReturn(MOCK_MEDIA_ID);
+        when(twitter.uploadMedia(any(File.class))).thenReturn(mockUploadedMedia);
     }
 
     @Test
     void testSearchAndReplyWithGif_NoMatchingTweets() throws TwitterException {
-        // Mock an empty result set
         QueryResult mockResult = mock(QueryResult.class);
         when(mockResult.getTweets()).thenReturn(new ArrayList<>());
         when(twitter.search(any(Query.class))).thenReturn(mockResult);
 
-        // Call the method under test
         twitterBotService.searchAndReplyWithGif("knife");
 
-        // Verify that no reply or upload is performed
         verify(twitter, times(1)).search(any(Query.class));
         verify(twitter, never()).uploadMedia(any(File.class));
         verify(twitter, never()).updateStatus(any(StatusUpdate.class));
@@ -96,14 +116,13 @@ class TwitterBotServiceTest {
         when(mockStatus.isRetweet()).thenReturn(false);
         when(mockUser.isProtected()).thenReturn(false);
 
-        // Test the method under different scenarios
         assertTrue(twitterBotService.shouldReplyToStatus(mockStatus));
 
         when(mockStatus.isRetweet()).thenReturn(true);
         assertFalse(twitterBotService.shouldReplyToStatus(mockStatus));
 
-        when(mockStatus.isRetweet()).thenReturn(false);
         when(mockUser.isProtected()).thenReturn(true);
+        when(mockStatus.isRetweet()).thenReturn(false);
         assertFalse(twitterBotService.shouldReplyToStatus(mockStatus));
     }
 
@@ -112,7 +131,6 @@ class TwitterBotServiceTest {
         String keyword = "knife";
         Query query = twitterBotService.createQuery(keyword, 10);
 
-        // Verify the query object properties
         assertNotNull(query);
         assertEquals("knife", query.getQuery());
         assertEquals(10, query.getCount());
@@ -125,41 +143,37 @@ class TwitterBotServiceTest {
 
         when(mockStatus.getUser()).thenReturn(mockUser);
         when(mockStatus.getId()).thenReturn(12345L);
-        when(mockUser.getScreenName()).thenReturn("mockUser");
+        when(mockUser.getScreenName()).thenReturn(MOCK_USER_SCREEN_NAME);
 
-        // Call the method under test
-        twitterBotService.replyWithGif(mockStatus, "123456");
+        twitterBotService.replyWithGif(mockStatus, String.valueOf(MOCK_MEDIA_ID));
 
-        // Verify that the updateStatus method was called with the correct parameters
-        verify(twitter, times(1)).updateStatus(any(StatusUpdate.class));
+        ArgumentCaptor<StatusUpdate> captor = ArgumentCaptor.forClass(StatusUpdate.class);
+        verify(twitter).updateStatus(captor.capture());
+
+        StatusUpdate capturedStatusUpdate = captor.getValue();
+        assertNotNull(capturedStatusUpdate);
+        assertEquals("@" + MOCK_USER_SCREEN_NAME, capturedStatusUpdate.getStatus());
+        assertEquals(12345L, capturedStatusUpdate.getInReplyToStatusId());
     }
 
     @Test
     void testUploadGif_Success() throws TwitterException {
-        // Mock the UploadedMedia behavior
-        UploadedMedia mockUploadedMedia = Mockito.mock(UploadedMedia.class);
-        when(mockUploadedMedia.getMediaId()).thenReturn(123456L);  // Simulate the media ID
-
-        // Mock the Twitter uploadMedia method to return the mock UploadedMedia
+        UploadedMedia mockUploadedMedia = mock(UploadedMedia.class);
+        when(mockUploadedMedia.getMediaId()).thenReturn(MOCK_MEDIA_ID);
         when(twitter.uploadMedia(any(File.class))).thenReturn(mockUploadedMedia);
 
-        // Call the method under test
-        String mediaId = twitterBotService.uploadGif(gifPath);
+        String mediaId = twitterBotService.uploadGif(GIF_PATH);
 
-        // Verify the result
         assertNotNull(mediaId);
-        assertEquals("123456", mediaId);
+        assertEquals(String.valueOf(MOCK_MEDIA_ID), mediaId);
     }
 
     @Test
     void testUploadGif_Failure() throws TwitterException {
-        // Simulate a failure in uploading
         when(twitter.uploadMedia(any(File.class))).thenThrow(new TwitterException("Failed to upload"));
 
-        // Call the method under test
-        String mediaId = twitterBotService.uploadGif(gifPath);
+        String mediaId = twitterBotService.uploadGif(GIF_PATH);
 
-        // Verify the result
         assertNull(mediaId);
     }
 }

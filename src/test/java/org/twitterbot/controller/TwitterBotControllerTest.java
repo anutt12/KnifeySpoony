@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @TestExecutionListeners(MockitoTestExecutionListener.class)
-public class TwitterBotControllerTest {
+class TwitterBotControllerTest {
 
     @InjectMocks
     private TwitterBotController twitterBotController;
