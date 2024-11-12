@@ -1,13 +1,12 @@
 package org.twitterbot.controller;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockitoTestExecutionListener;
-import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.twitterbot.service.TwitterBotService;
 
 import static org.hamcrest.Matchers.containsString;
@@ -16,22 +15,20 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@TestExecutionListeners(MockitoTestExecutionListener.class)
+@WebMvcTest(controllers = TwitterBotController.class)
+@TestPropertySource(locations = "classpath:application-test.properties")
 class TwitterBotControllerTest {
 
-    @InjectMocks
-    private TwitterBotController twitterBotController;
-
-    @Mock
+    @MockBean
     private TwitterBotService twitterBotService;
 
+    @Autowired
     private MockMvc mockMvc;
 
     @Test
-    void testTriggerSearchAndReplyWithGif() throws Exception {
-        String keyword = "test";
-        mockMvc = MockMvcBuilders.standaloneSetup(twitterBotController).build();
+    @WithMockUser
+    void testTriggerSearchAndReplyWithKnife() throws Exception {
+        String keyword = "knife";  // Ensure we test it with "knife"
 
         mockMvc.perform(get("/trigger-search-and-reply")
                         .param("keyword", keyword))
@@ -42,10 +39,13 @@ class TwitterBotControllerTest {
     }
 
     @Test
-    void testTriggerSearchAndReplyWithGifWithoutKeyword() throws Exception {
-        mockMvc = MockMvcBuilders.standaloneSetup(twitterBotController).build();
-
+    @WithMockUser
+    void testTriggerSearchAndReplyWithDefaultKeyword() throws Exception {
+        // No keyword provided, should default to "knife"
         mockMvc.perform(get("/trigger-search-and-reply"))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Bot triggered for keyword: knife")));
+
+        verify(twitterBotService).searchAndReplyWithGif("knife");
     }
 }

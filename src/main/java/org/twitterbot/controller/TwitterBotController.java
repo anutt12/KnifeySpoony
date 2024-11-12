@@ -1,17 +1,19 @@
 package org.twitterbot.controller;
 
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.twitterbot.service.TwitterBotService;
 
+
 /**
- * TwitterBotController is a REST controller that triggers a Twitter bot
- * to search for tweets containing a specified keyword and reply with a GIF.
- *
- * This controller implements CommandLineRunner to support triggering the bot
- * from the command line.
+ * TwitterBotController is a REST controller that provides endpoints to interact
+ * with a Twitter bot. This bot searches for tweets containing a specified keyword
+ * and replies to them with a GIF.
+ * <p>
+ * This controller also implements CommandLineRunner to allow triggering the bot
+ * via command-line arguments.
  */
 @RestController
 public class TwitterBotController implements CommandLineRunner {
@@ -24,7 +26,7 @@ public class TwitterBotController implements CommandLineRunner {
         this.twitterBotService = twitterBotService;
     }
 
-    @RequestMapping("/trigger-search-and-reply")
+    @GetMapping("/trigger-search-and-reply")  // Use @GetMapping to explicitly handle GET requests
     public String triggerSearchAndReplyWithGif(@RequestParam String keyword) {
         twitterBotService.searchAndReplyWithGif(keyword);
         return TRIGGERED_MESSAGE + keyword;

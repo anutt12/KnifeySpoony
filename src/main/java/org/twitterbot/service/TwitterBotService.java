@@ -15,7 +15,6 @@ import java.io.File;
 @Service
 public class TwitterBotService {
 
-
     @Value("${gif.path}")  // Inject the GIF path from application.properties
     private String gifPath;
 
@@ -25,9 +24,14 @@ public class TwitterBotService {
         this.twitter = twitter;
     }
 
-
     public void searchAndReplyWithGif(String keyword) {
+        final String DEFAULT_KEYWORD = "knife";  // Default to "knife"
         final int TWEET_COUNT = 10;
+
+        // If the keyword is empty or null, default to "knife"
+        if (keyword == null || keyword.isEmpty()) {
+            keyword = DEFAULT_KEYWORD;
+        }
 
         try {
             Query query = createQuery(keyword, TWEET_COUNT);
@@ -66,10 +70,8 @@ public class TwitterBotService {
         twitter.updateStatus(statusUpdate);
     }
 
-    // Method to upload the GIF to Twitter and get the media ID
     String uploadGif(String filePath) {
         try {
-            // Upload the GIF file
             File gifFile = new File(filePath);
             long mediaId = twitter.uploadMedia(gifFile).getMediaId();
             return String.valueOf(mediaId);
