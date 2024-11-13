@@ -5,8 +5,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.twitterbot.knifeyspoony.KnifeySpoonyApplication;
 import org.twitterbot.service.TwitterBotService;
 
 import static org.hamcrest.Matchers.containsString;
@@ -16,7 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = TwitterBotController.class)
-@TestPropertySource(locations = "classpath:application-test.properties")
+@ContextConfiguration(classes = KnifeySpoonyApplication.class)
 class TwitterBotControllerTest {
 
     @MockBean
